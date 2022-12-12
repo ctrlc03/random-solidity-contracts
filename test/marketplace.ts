@@ -54,10 +54,10 @@ describe("Escrow NFT", function () {
     user2Address = await user2.getAddress()
 
     nftFactory = await ethers.getContractFactory('MockERC721')
-    nft = await nftFactory.deploy();
+    nft = await nftFactory.deploy('Mock1', 'Mock1')
     erc20Factory = await ethers.getContractFactory('MockERC20')
-    erc20_1 = await erc20Factory.deploy();
-    erc20_2 = await erc20Factory.deploy();
+    erc20_1 = await erc20Factory.deploy('ERC201', 'ERC201')
+    erc20_2 = await erc20Factory.deploy('ERC202', 'ERC202')
 
     await erc20_1.connect(user1).transfer(user2Address, orderPrice.mul(5))
     await erc20_2.connect(user1).transfer(user2Address, orderPrice.mul(5))

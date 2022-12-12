@@ -51,8 +51,7 @@ contract EscrowNFTSale {
     // offerId => Offer
     mapping(uint256 => Offer) public offers;
 
-    constructor() payable {  
-    }
+    constructor() payable {}
 
     // check that the order is valid
     modifier validOrder(uint256 orderId) {
