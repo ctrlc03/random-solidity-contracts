@@ -75,7 +75,5 @@ contract MarketplaceTest is Test {
         assertEq(orderId, 1);
         EscrowNFTSale.Order memory order = marketplace.getOrder(orderId - 1);
         assertEq(order.seller, user1);
-        assertEq(order.nftAddress, nft1);
     }
-    
 }
