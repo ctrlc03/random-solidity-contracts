@@ -72,6 +72,8 @@ contract CrowdFund {
     error IsCompleted();
     error UserBalanceTooLow();
     error NotEnoughEther();
+    error GoalNotReached();
+    error GoalReached();
 
     constructor(uint128 _duration, uint128 _goal, address _owner, string memory campaignName, address _WETH) payable {
         owner = _owner;
@@ -79,7 +81,8 @@ contract CrowdFund {
         goal = _goal;
         WETH = IWETH(_WETH);
 
-        nft = new PledgerNFT(string.concat("Donor-", campaignName), string.concat("Donor-", campaignName));
+        string memory nftName = string.concat("Donor-", campaignName);
+        nft = new PledgerNFT(nftName, nftName);
     }
 
     function pledge() external payable {
@@ -111,10 +114,22 @@ contract CrowdFund {
         _donation();
     }
 
-    function claim() external {
+    function ownerClaim() external payable {
         _onlyOwner();
         _isCompleted();
-        selfdestruct(payable(msg.sender));
+        if (_hasReachedGoal()) selfdestruct(payable(msg.sender));
+        else revert GoalNotReached();
+    }
+
+    function userClaim() external payable {
+        if (!_hasReachedGoal()) {
+            uint256 amount = donations[msg.sender];
+            donations[msg.sender] = 0;
+            if (amount != 0) {
+                _sendEth(msg.sender, amount);
+            }
+        } else revert GoalReached();
+
     }
 
     function _donation() private {
@@ -150,6 +165,11 @@ contract CrowdFund {
 
     function _burnNFT(uint256 tokenId) private {
         nft.burn(tokenId);
+    }
+
+    function _hasReachedGoal() private view returns(bool) {
+        _isCompleted();
+        return address(this).balance >= goal;
     }
 
     /**
