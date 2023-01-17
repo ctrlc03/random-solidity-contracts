@@ -9,3 +9,4 @@ Experimenting with Solidity and trying to learn how to use foundry.
 | EscrowNFTSale | Allows to buy and sell NFTs | escrow.sol
 | MasterChef | An updated version of MasterChef | masterchef.sol
 | EnglishAuction | An interpretation of a contract that allows to create English auctions for ERC721 assets | englishAuction.sol
+| CrowdFund | A CrowdFund contract with its own factory and NFT rewards for donors | crowdFund.sol |
