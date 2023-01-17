@@ -11,6 +11,7 @@ interface IWETH {
     function withdraw(uint) external;
 }
 
+/// @notice The contract allows to create new English Auctions
 contract EnglishAuction {
 
     struct Auction {
@@ -26,7 +27,8 @@ contract EnglishAuction {
     }
 
     uint256 constant auctionDuration = 7 days;
-    IWETH constant WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+
+    IWETH immutable WETH;
 
     // auctionId => Auction
     mapping(uint256 => Auction) public auctions;
@@ -34,11 +36,13 @@ contract EnglishAuction {
     mapping(uint256 => Bid) public bids;
     uint256 public nextAuctionId;
 
+    // Events
     event AuctionCreated(uint256 auctionId);
     event NewTopBid(uint256 auctionId, uint256 amount, address bidder);
     event AuctionClaimed(uint256 auctionId, address claimer);
     event AuctionCancelled(uint256 auctionId);
 
+    // Errors
     error NotOwned();
     error NotTransferred();
     error InvalidId();
@@ -52,8 +56,16 @@ contract EnglishAuction {
     error NotEnoughEther();
     error NotBidder();
 
-    constructor() payable {}
+    constructor(address _weth) payable {
+        WETH = IWETH(_weth);
+    }
 
+    /**
+     * @notice Creates a new auction
+     * @param _asset <address> - the address of the ERC721 token
+     * @param _id <uint128> - the id of the NFT
+     * @return auctionId <uint256>
+     */
     function createAuction(
         address _asset,
         uint128 _id
@@ -81,6 +93,10 @@ contract EnglishAuction {
         if (address(this) != IERC721(_asset).ownerOf(_id)) revert NotTransferred();
     }
 
+    /**
+     * @notice Allows the creator of an auction to cancel it
+     * @param auctionId <uint256> - the id of the auction to cancel
+     */
     function cancelAuction(uint256 auctionId) external payable {
         // check if valid
         _validAuction(auctionId);
@@ -93,12 +109,16 @@ contract EnglishAuction {
         // cannot cancel if there is a bid (I decided that u.u)
         if (_bid.amount > 0) revert HasBid();
 
-        // we know it's cancelled now
-        _auction.creator = address(0); 
+        // we can delete
+        delete auctions[auctionId];
 
         emit AuctionCancelled(auctionId);
     }
 
+    /**
+     * @notice Allows users to bid onto an auction
+     * @param auctionId <uint256> - the id of the auction to bid for
+     */
     function bid(uint256 auctionId) external payable {
         _validAuction(auctionId);
         Auction storage auction = auctions[auctionId];
@@ -124,6 +144,10 @@ contract EnglishAuction {
         emit NewTopBid(auctionId, amountToRefund, msg.sender);
     }
 
+    /**
+     * @notice allows to finish an auction
+     * @param auctionId <uint256> - the id of the auction to complete and claim 
+     */
     function claim(uint256 auctionId) external payable {
         _validAuction(auctionId);
 
@@ -144,22 +168,41 @@ contract EnglishAuction {
         emit AuctionClaimed(auctionId, msg.sender);
     }
 
+    /**
+     * @notice Get an Auction details
+     * @param auctionId <uint256> - the id of the auction
+     * @return Auction 
+     */
     function getAuction(uint256 auctionId) external view returns(Auction memory) {
         _validAuction(auctionId);
 
         return auctions[auctionId];
     }
 
+    /**
+     * @notice Get the top bid for an auction
+     * @param auctionId <uint256> - the id of the auction
+     * @return Bid 
+     */
     function getTopBid(uint256 auctionId) external view returns(Bid memory) {
         _validAuction(auctionId);
 
         return bids[auctionId];
     }
 
+    /**
+     * @notice Checks that the auction Id is valid
+     * @param auctionId <uint256> - the auction id to validate
+     */
     function _validAuction(uint256 auctionId) private view {
         if (auctionId >= nextAuctionId) revert InvalidId();
     }
 
+    /**
+     * @notice Sends Ether safely
+     * @param receiver <address> - Ether receiver
+     * @param amountToRefund <uint256> - the amount of Ether to send
+     */
     function _sendEth(
         address receiver,
         uint256 amountToRefund

@@ -9,7 +9,7 @@ contract MockWETH {
     uint256 public constant decimals = 18;
 
     uint256 public totalBalance;
-    mapping(address => uint256) balances;
+    mapping(address => uint256) public balances;
 
     event Deposit(uint256 amount, address depositor);
     event Withdraw(uint256 amount, address withdrawer);
