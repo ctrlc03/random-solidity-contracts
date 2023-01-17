@@ -15,8 +15,7 @@ interface IWETH {
 contract PledgerNFT is ERC721 {
 
     address public owner;
-    uint8 public constant maxMint = 1;
-    uint256 public nextTokenId; 
+    uint256 public nextTokenId = 1; 
     
     error NotOwner();
     error AlreadyMinted();
@@ -61,8 +60,8 @@ contract CrowdFund {
     PledgerNFT public nft;
     IWETH public immutable WETH;
 
-    mapping(address => uint256) donations;
-    mapping(address => uint256) donorNFTs;
+    mapping(address => uint256) public donations;
+    mapping(address => uint256) public donorNFTs;
 
     event Donated(address who, uint256 amount);
     event Withdrawn(address who, uint256 amount);
@@ -93,7 +92,7 @@ contract CrowdFund {
         // must be ongoing
         _isOngoing();
         // user needs to have enough balance to withraw
-        if (donations[msg.sender] < amount) revert UserBalanceTooLow();
+        if (amount > donations[msg.sender]) revert UserBalanceTooLow();
 
         // cannot underflow because of above check
         unchecked {

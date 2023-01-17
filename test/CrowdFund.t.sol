@@ -7,6 +7,7 @@ import "../contracts/mocks/mockERC721.sol";
 import "../contracts/mocks/mockERC20.sol";
 import "../contracts/mocks/mockWETH.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "forge-std/console.sol";
 
 contract CrowdFundTest is Test {
     address public user1;
@@ -29,7 +30,7 @@ contract CrowdFundTest is Test {
         factory = new CrowdFundFactory();
     }
 
-    function deployCrowdFund() public {
+    function testDeployCrowdFund() public {
         address crowdfundAddress = factory.deployCrowdFund(
             1 days,
             1 ether,
@@ -42,7 +43,21 @@ contract CrowdFundTest is Test {
         assertEq(crowdFund.goal(), 1 ether);
     }
 
-    function contribute() public {
+    function testNFTIsDeployed() public {
+        address crowdfundAddress = factory.deployCrowdFund(
+            1 days,
+            1 ether,
+            "Make me rich",
+            address(mockWETH)
+        );
+
+        CrowdFund crowdFund = CrowdFund(payable(crowdfundAddress));
+        PledgerNFT nft = PledgerNFT(crowdFund.nft());
+        assertEq(nft.name(), string.concat("Donor-", "Make me rich"));
+        assertEq(nft.nextTokenId(), 1);
+    }
+
+    function testContribute() public {
         address crowdfundAddress = factory.deployCrowdFund(
             1 days,
             1 ether,
@@ -60,6 +75,50 @@ contract CrowdFundTest is Test {
 
         PledgerNFT nft = PledgerNFT(crowdFund.nft());
         assertEq(nft.ownerOf(1), user2);
+    }
+
+    function testWithdrawContributionFully() public {
+        address crowdfundAddress = factory.deployCrowdFund(
+            1 days,
+            1 ether,
+            "Make me rich",
+            address(mockWETH)
+        );
+
+        CrowdFund crowdFund = CrowdFund(payable(crowdfundAddress));
+        hoax(user2, 2 ether);
+        crowdFund.pledge{value: 1 ether}();
+        PledgerNFT nft = PledgerNFT(crowdFund.nft());
+
+        uint256 donation = crowdFund.donations(user2);
+        assertEq(donation, 1 ether);
+        vm.startPrank(user2);
+        crowdFund.unpledge(1 ether);
+        assertEq(nft.balanceOf(user2), 0);
+        assertEq(user2.balance, 2 ether);
+        donation = crowdFund.donations(user2);
+        assertEq(donation, 0);
+    }
+
+    function testWithdrawPartially() public {
+        address crowdfundAddress = factory.deployCrowdFund(
+            1 days,
+            1 ether,
+            "Make me rich",
+            address(mockWETH)
+        );
+
+        CrowdFund crowdFund = CrowdFund(payable(crowdfundAddress));
+        hoax(user2, 2 ether);
+        crowdFund.pledge{value: 1 ether}();
+        PledgerNFT nft = PledgerNFT(crowdFund.nft());
+
+        vm.startPrank(user2);
+        crowdFund.unpledge(1e17);
+        assertEq(nft.ownerOf(1), user2);
+
+        uint256 donation = crowdFund.donations(user2);
+        assertEq(donation, 1 ether - 1e17);
     }
 
     

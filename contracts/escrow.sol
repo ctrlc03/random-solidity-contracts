@@ -150,7 +150,7 @@ contract EscrowNFTSale {
         } else {
             // can a seller DoS the buyer? 
             // don't think so as this would revert and msg.value sent back
-            (bool result, bytes memory data) = order.seller.call{value: msg.value}("");
+            (bool result, ) = order.seller.call{value: msg.value}("");
             require(result, 'Transfer failed');
         }
        

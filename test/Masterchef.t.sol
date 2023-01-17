@@ -21,7 +21,7 @@ contract MasterChefTest is Test {
     uint256 user1PrivateKey = 5678;
     uint256 user2PrivateKey = 9876;
 
-    function setup() public {
+    function setUp() public {
         owner = vm.addr(ownerPrivateKey);
         user1 = vm.addr(user1PrivateKey);
         user2 = vm.addr(user2PrivateKey);
@@ -31,9 +31,10 @@ contract MasterChefTest is Test {
         lp1 = new MockERC20('LP1', 'LP1');
         lp2 = new MockERC20('LP2', 'LP2');
         master = new MasterChef(block.number + 10, address(token1));
+        vm.stopPrank();
     }
 
-    function createPool() public {
+    function testCreatePool() public {
         vm.startPrank(owner);
 
         uint256 _allocPoint = 10;
@@ -42,5 +43,6 @@ contract MasterChefTest is Test {
             address(lp1),
             false 
         );
+        vm.stopPrank();
     }
 }
